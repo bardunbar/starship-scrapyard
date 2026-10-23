@@ -2,6 +2,7 @@
 
 import "core:log"
 import rl "vendor:raylib"
+import "core:fmt"
 
 SCREEN_WIDTH :: 720
 SCREEN_HEIGHT :: 720
@@ -19,6 +20,54 @@ main :: proc() {
     defer rl.UnloadRenderTexture(render_target)
     rl.SetTextureFilter(render_target.texture, rl.TextureFilter.BILINEAR)
 
+    // Load up some images
+    core_texture := rl.LoadTexture("assets/kenny/puzzle pack/element_grey_square.png")
+    defer rl.UnloadTexture(core_texture)
+
+    ship_part_width := core_texture.width
+    ship_part_height := core_texture.height
+    ship_part_size := [2]i32 {ship_part_width, ship_part_height}
+
+    hull_texture := rl.LoadTexture("assets/kenny/puzzle pack/element_green_square.png")
+    defer rl.UnloadTexture(hull_texture)
+
+    blaster_texture := rl.LoadTexture("assets/kenny/puzzle pack/element_red_square.png")
+    defer rl.UnloadTexture(blaster_texture)
+
+    thruster_texture := rl.LoadTexture("assets/kenny/puzzle pack/element_yellow_square.png")
+    defer rl.UnloadTexture(thruster_texture)
+
+    shield_texture := rl.LoadTexture("assets/kenny/puzzle pack/element_blue_square.png")
+    defer rl.UnloadTexture(shield_texture)
+
+    part_textures := PartTextures {
+        .Hull = hull_texture,
+        .Blaster = blaster_texture,
+        .Thruster = thruster_texture,
+        .Shield = shield_texture,
+    }
+
+    player_data := Player_Data {
+        position = rl.Vector2 { f32(SCREEN_WIDTH / 2 - core_texture.width / 2), f32(SCREEN_HEIGHT - 50 - core_texture.height) },
+        texture = core_texture,
+        horizontal_speed = 200,
+    }
+
+    append(&player_data.parts[PartId.Hull], PartData { position = { 0, -1 } } )
+    append(&player_data.parts[PartId.Hull], PartData { position = { 1, -1 } } )
+    append(&player_data.parts[PartId.Hull], PartData { position = { -1, -1 } } )
+    append(&player_data.parts[PartId.Hull], PartData { position = { 0, -2 } } )
+
+    append(&player_data.parts[PartId.Thruster], PartData { position = { 1, 0 }})
+    append(&player_data.parts[PartId.Thruster], PartData { position = { -1, 0 }})
+
+    append(&player_data.parts[PartId.Blaster], PartData { position = { 2, -1 }})
+    append(&player_data.parts[PartId.Blaster], PartData { position = { -2, -1 }})
+
+    append(&player_data.parts[PartId.Shield], PartData { position = { 0, -3 } } )
+    append(&player_data.parts[PartId.Shield], PartData { position = { 1, -2 } } )
+    append(&player_data.parts[PartId.Shield], PartData { position = { -1, -2 } } )
+
     rl.SetTargetFPS(60)
 
     frame_counter := 0
@@ -28,26 +77,46 @@ main :: proc() {
         frame_counter += 1
 
         {
-            rl.BeginTextureMode(render_target)
-            defer rl.EndTextureMode()
+            // Update game logic
 
-            rl.ClearBackground(rl.RAYWHITE)
-
-            rl.DrawRectangle(70, 90, 200, 200, rl.BLACK)
-            rl.DrawRectangle(70 + 16, 90 + 16, 200 - 32, 200 - 32, rl.RAYWHITE)
-            rl.DrawText("raylib", 70 + 200 - rl.MeasureText("raylib", 40) - 32, 90 + 200 - 40 - 24, 40, rl.BLACK)
-
-            rl.DrawText("6.x", 290, 90 - 26, 280, rl.BLACK)
-            rl.DrawText("GAMEJAM", 70, 90 + 210, 120, rl.MAROON)
-
-            if (frame_counter / 20) % 2 == 0 {
-                rl.DrawText("are you ready?", 160, 500, 50, rl.BLACK)
+            // Handle inputs
+            input_vector := rl.Vector2 { 0, 0 }
+            if rl.IsKeyDown(rl.KeyboardKey.A) {
+                input_vector.x -= 1
             }
 
-            rl.DrawRectangleLinesEx(rl.Rectangle { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT}, 16, rl.BLACK)
+            if rl.IsKeyDown(rl.KeyboardKey.D) {
+                input_vector.x += 1
+            }
+
+            player_data.position += rl.Vector2 { input_vector.x *  player_data.horizontal_speed * rl.GetFrameTime(), 0 }
         }
 
         {
+            // Render the world
+
+            rl.BeginTextureMode(render_target)
+            defer rl.EndTextureMode()
+
+            rl.ClearBackground(rl.BLACK)
+
+            rl.DrawTexture(player_data.texture, i32(player_data.position.x), i32(player_data.position.y), rl.WHITE)
+            player_pos_int := [2]i32 { i32(player_data.position.x), i32(player_data.position.y)}
+
+            for parts, part_id in player_data.parts {
+                part_texture := part_textures[part_id]
+
+                for part_data in parts {
+
+                    part_position := player_pos_int + (part_data.position * ship_part_size)
+                    rl.DrawTexture(part_texture, part_position.x, part_position.y, rl.WHITE)
+                }
+            }
+        }
+
+        {
+            // Render to screen
+
             rl.BeginDrawing()
             defer rl.EndDrawing()
 
@@ -61,7 +130,7 @@ main :: proc() {
                 rl.Rectangle {
                     0, 0, f32(render_target.texture.width), f32(render_target.texture.height),
                 },
-                rl.Vector2 { 0, 0},
+                rl.Vector2 { 0, 0 },
                 0.0,
                 rl.WHITE,
             )
