@@ -2,7 +2,7 @@
 
 import "core:log"
 import rl "vendor:raylib"
-import "core:fmt"
+//import "core:fmt"
 
 SCREEN_WIDTH :: 720
 SCREEN_HEIGHT :: 720
@@ -53,20 +53,23 @@ main :: proc() {
         horizontal_speed = 200,
     }
 
-    append(&player_data.parts[PartId.Hull], PartData { position = { 0, -1 } } )
-    append(&player_data.parts[PartId.Hull], PartData { position = { 1, -1 } } )
-    append(&player_data.parts[PartId.Hull], PartData { position = { -1, -1 } } )
-    append(&player_data.parts[PartId.Hull], PartData { position = { 0, -2 } } )
+    append(&player_data.parts[PartId.Hull], PartData { position = { 0, -1 }, id = .Hull } )
+    append(&player_data.parts[PartId.Hull], PartData { position = { 1, -1 }, id = .Hull } )
+    append(&player_data.parts[PartId.Hull], PartData { position = { -1, -1 }, id = .Hull } )
+    append(&player_data.parts[PartId.Hull], PartData { position = { 0, -2 }, id = .Hull } )
 
-    append(&player_data.parts[PartId.Thruster], PartData { position = { 1, 0 }})
-    append(&player_data.parts[PartId.Thruster], PartData { position = { -1, 0 }})
+    append(&player_data.parts[PartId.Thruster], PartData { position = { 1, 0 }, id = .Thruster})
+    append(&player_data.parts[PartId.Thruster], PartData { position = { -1, 0 }, id = .Thruster})
 
-    append(&player_data.parts[PartId.Blaster], PartData { position = { 2, -1 }})
-    append(&player_data.parts[PartId.Blaster], PartData { position = { -2, -1 }})
+    append(&player_data.parts[PartId.Blaster], PartData { position = { 2, -1 }, id = .Blaster})
+    append(&player_data.parts[PartId.Blaster], PartData { position = { -2, -1 }, id = .Blaster})
 
-    append(&player_data.parts[PartId.Shield], PartData { position = { 0, -3 } } )
-    append(&player_data.parts[PartId.Shield], PartData { position = { 1, -2 } } )
-    append(&player_data.parts[PartId.Shield], PartData { position = { -1, -2 } } )
+    append(&player_data.parts[PartId.Shield], PartData { position = { 0, -3 }, id = .Shield } )
+    append(&player_data.parts[PartId.Shield], PartData { position = { 1, -2 }, id = .Shield } )
+    append(&player_data.parts[PartId.Shield], PartData { position = { -1, -2 }, id = .Shield } )
+
+    debris_manager := Debris_Manager {}
+    generate_random_debris(&debris_manager)
 
     rl.SetTargetFPS(60)
 
@@ -109,6 +112,19 @@ main :: proc() {
                 for part_data in parts {
 
                     part_position := player_pos_int + (part_data.position * ship_part_size)
+                    rl.DrawTexture(part_texture, part_position.x, part_position.y, rl.WHITE)
+                }
+            }
+
+            for current_debris in debris_manager.active_debris[0:debris_manager.debris_count] {
+                current_debris := current_debris
+
+                for part  in current_debris.parts[0:current_debris.part_count] {
+                    part_texture := part_textures[part.id]
+
+                    debris_pos_int :[2]i32 = { i32(current_debris.position.x), i32(current_debris.position.y) }
+
+                    part_position := debris_pos_int + (part.position * ship_part_size)
                     rl.DrawTexture(part_texture, part_position.x, part_position.y, rl.WHITE)
                 }
             }
