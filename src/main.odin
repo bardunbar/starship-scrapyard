@@ -114,15 +114,25 @@ main :: proc() {
 
             player_data.position += rl.Vector2 { input_vector.x *  player_data.horizontal_speed * rl.GetFrameTime(), 0 }
 
+            player_bounds := get_player_bounds(&player_data)
+
             // Update any active debris -- Loop in reverse so we can remove with a swap
             #reverse for &debris, index in debris_manager.active_debris[0:debris_manager.debris_count] {
                debris.position += rl.Vector2 { 0, player_data.vertical_speed * rl.GetFrameTime() }
-                bounds := get_debris_bounds(debris)
+                bounds := get_debris_bounds(&debris)
+
                 if (bounds.y > SCREEN_HEIGHT) {
                     sliced_debris := debris_manager.active_debris[0:]
                     array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
                     debris_manager.debris_count -= 1
                     generate_random_debris(&debris_manager)
+                } else {
+                    if rl.CheckCollisionRecs(player_bounds, bounds) {
+                        sliced_debris := debris_manager.active_debris[0:]
+                        array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
+                        debris_manager.debris_count -= 1
+                        generate_random_debris(&debris_manager)
+                    }
                 }
             }
         }
@@ -148,6 +158,10 @@ main :: proc() {
                 }
             }
 
+            when ODIN_DEBUG {
+                // Draw the player bounds
+                rl.DrawRectangleLinesEx(get_player_bounds(&player_data), 4.0, rl.GREEN)
+            }
             for current_debris in debris_manager.active_debris[0:debris_manager.debris_count] {
                 current_debris := current_debris
 
@@ -158,6 +172,10 @@ main :: proc() {
 
                     part_position := debris_pos_int + (part.position * ship_part_size)
                     rl.DrawTexture(part_texture, part_position.x, part_position.y, rl.WHITE)
+                }
+
+                when ODIN_DEBUG {
+                    rl.DrawRectangleLinesEx(get_debris_bounds(&current_debris), 4.0, rl.YELLOW)
                 }
             }
         }
