@@ -9,6 +9,8 @@ SCREEN_HEIGHT :: 720
 
 GAME_NAME :: "Starship Scrapyard"
 
+ship_part_size: [2]i32 = {}
+
 main :: proc() {
     context.logger = log.create_console_logger()
     log.info(GAME_NAME)
@@ -26,7 +28,7 @@ main :: proc() {
 
     ship_part_width := core_texture.width
     ship_part_height := core_texture.height
-    ship_part_size := [2]i32 {ship_part_width, ship_part_height}
+    ship_part_size = [2]i32 {ship_part_width, ship_part_height}
 
     hull_texture := rl.LoadTexture("assets/kenny/puzzle pack/element_green_square.png")
     defer rl.UnloadTexture(hull_texture)
@@ -51,6 +53,7 @@ main :: proc() {
         position = rl.Vector2 { f32(SCREEN_WIDTH / 2 - core_texture.width / 2), f32(SCREEN_HEIGHT - 50 - core_texture.height) },
         texture = core_texture,
         horizontal_speed = 200,
+        vertical_speed = 100,
     }
 
     append(&player_data.parts[PartId.Hull], PartData { position = { 0, -1 }, id = .Hull } )
@@ -93,6 +96,18 @@ main :: proc() {
             }
 
             player_data.position += rl.Vector2 { input_vector.x *  player_data.horizontal_speed * rl.GetFrameTime(), 0 }
+
+            // Update any active debris
+            #reverse for &debris, index in debris_manager.active_debris[0:debris_manager.debris_count] {
+               debris.position += rl.Vector2 { 0, player_data.vertical_speed * rl.GetFrameTime() }
+                bounds := get_debris_bounds(debris)
+                if (bounds.y > SCREEN_HEIGHT) {
+                    sliced_debris := debris_manager.active_debris[0:]
+                    array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
+                    debris_manager.debris_count -= 1
+                    generate_random_debris(&debris_manager)
+                }
+            }
         }
 
         {
