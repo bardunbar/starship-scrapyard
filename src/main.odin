@@ -1,8 +1,9 @@
 ﻿package main
 
+import "core:mem"
 import "core:log"
 import rl "vendor:raylib"
-//import "core:fmt"
+import "core:fmt"
 
 SCREEN_WIDTH :: 720
 SCREEN_HEIGHT :: 720
@@ -12,6 +13,22 @@ GAME_NAME :: "Starship Scrapyard"
 ship_part_size: [2]i32 = {}
 
 main :: proc() {
+    when ODIN_DEBUG {
+        track: mem.Tracking_Allocator
+        mem.tracking_allocator_init(&track, context.allocator)
+        context.allocator = mem.tracking_allocator(&track)
+
+        defer {
+            if len(track.allocation_map) > 0 {
+                fmt.eprintf("=== %v allocations not freed: ===\n", len(track.allocation_map))
+                for _, entry in track.allocation_map {
+                    fmt.eprintf("- %v bytes @ %v\n", entry.size, entry.location)
+                }
+            }
+            mem.tracking_allocator_destroy(&track)
+        }
+    }
+
     context.logger = log.create_console_logger()
     log.info(GAME_NAME)
 
@@ -97,7 +114,7 @@ main :: proc() {
 
             player_data.position += rl.Vector2 { input_vector.x *  player_data.horizontal_speed * rl.GetFrameTime(), 0 }
 
-            // Update any active debris
+            // Update any active debris -- Loop in reverse so we can remove with a swap
             #reverse for &debris, index in debris_manager.active_debris[0:debris_manager.debris_count] {
                debris.position += rl.Vector2 { 0, player_data.vertical_speed * rl.GetFrameTime() }
                 bounds := get_debris_bounds(debris)
@@ -168,5 +185,11 @@ main :: proc() {
         }
     }
 
+
+    for parts in player_data.parts {
+        delete(parts)
+    }
+
+    log.destroy_console_logger(context.logger)
 }
 
