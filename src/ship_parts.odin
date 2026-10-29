@@ -1,5 +1,6 @@
 ﻿package main
 
+import "core:math"
 import rl "vendor:raylib"
 
 PartId :: enum {Hull, Blaster, Thruster, Shield}
@@ -36,7 +37,12 @@ get_part_bounds :: proc(parts: []PartData) -> rl.Rectangle {
     }
 }
 
-do_parts_collide :: proc(parts, others: []PartData, parts_offset, others_offset: rl.Vector2) -> bool {
+do_parts_collide :: proc(parts, others: []PartData, parts_offset, others_offset: rl.Vector2) -> (bool, [2]i32, [2]i32) {
+
+    min_dist_sqr := f32(math.F32_MAX)
+    part_collision: [2]i32 = {}
+    other_collision: [2]i32 = {}
+    found_collision := false
 
     for part in parts {
         local_part_pos := part.position * ship_part_size
@@ -49,7 +55,6 @@ do_parts_collide :: proc(parts, others: []PartData, parts_offset, others_offset:
         }
 
         for other in others {
-
             local_other_pos := other.position * ship_part_size
             other_rect := rl.Rectangle {
                 f32(local_other_pos.x) + others_offset.x,
@@ -59,9 +64,19 @@ do_parts_collide :: proc(parts, others: []PartData, parts_offset, others_offset:
             }
 
             if rl.CheckCollisionRecs(part_rect, other_rect) {
-                return true
+                collision_dist_sqr := rl.Vector2DistanceSqr(
+                    to_vector(local_part_pos) + parts_offset,
+                    to_vector(local_other_pos) + others_offset )
+
+                if collision_dist_sqr < min_dist_sqr {
+                    min_dist_sqr = collision_dist_sqr
+                    part_collision = part.position
+                    other_collision = other.position
+                    found_collision = true
+                }
             }
         }
     }
-    return false
+
+    return found_collision, part_collision, other_collision
 }

@@ -128,7 +128,10 @@ main :: proc() {
                     generate_random_debris(&debris_manager)
                 } else {
                     if rl.CheckCollisionRecs(player_bounds, bounds) {
-                        if does_collide_with_player(&player_data, &debris) {
+                        should_weld, player_pos, debris_translation := does_collide_with_player(&player_data, &debris)
+                        if should_weld {
+                            weld_debris_to_player(&player_data, &debris, player_pos, debris_translation)
+
                             sliced_debris := debris_manager.active_debris[0:]
                             array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
                             debris_manager.debris_count -= 1
