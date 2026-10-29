@@ -179,6 +179,7 @@ main :: proc() {
                 }
 
                 when ODIN_DEBUG {
+                    rl.DrawRectangleLinesEx(rl.Rectangle {current_debris.position.x, current_debris.position.y, f32(ship_part_width), f32(ship_part_height), }, 2.0, rl.YELLOW)
                     rl.DrawRectangleLinesEx(get_debris_bounds(&current_debris), 4.0, rl.YELLOW)
                 }
             }

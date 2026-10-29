@@ -75,7 +75,7 @@ generate_random_debris :: proc(manager: ^Debris_Manager) {
 }
 
 get_debris_bounds :: proc(debris: ^Debris_Data) -> rl.Rectangle {
-    local_bounds := get_part_bounds(debris.parts[:])
+    local_bounds := get_part_bounds(debris.parts[0:debris.part_count])
     local_bounds.x = debris.position.x + local_bounds.x
     local_bounds.y = debris.position.y + local_bounds.y
 
