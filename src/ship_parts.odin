@@ -35,3 +35,33 @@ get_part_bounds :: proc(parts: []PartData) -> rl.Rectangle {
         f32(max_pos.y - min_pos.y)
     }
 }
+
+do_parts_collide :: proc(parts, others: []PartData, parts_offset, others_offset: rl.Vector2) -> bool {
+
+    for part in parts {
+        local_part_pos := part.position * ship_part_size
+
+        part_rect := rl.Rectangle {
+            f32(local_part_pos.x) + parts_offset.x,
+            f32(local_part_pos.y) + parts_offset.y,
+            f32(ship_part_size.x),
+            f32(ship_part_size.y)
+        }
+
+        for other in others {
+
+            local_other_pos := other.position * ship_part_size
+            other_rect := rl.Rectangle {
+                f32(local_other_pos.x) + others_offset.x,
+                f32(local_other_pos.y) + others_offset.y,
+                f32(ship_part_size.x),
+                f32(ship_part_size.y)
+            }
+
+            if rl.CheckCollisionRecs(part_rect, other_rect) {
+                return true
+            }
+        }
+    }
+    return false
+}

@@ -31,3 +31,13 @@ get_player_bounds :: proc(player_data: ^Player_Data) -> rl.Rectangle {
         max_pos.y - min_pos.y,
     }
 }
+
+does_collide_with_player :: proc(player_data: ^Player_Data, debris_data: ^Debris_Data) -> bool {
+    parts := debris_data.parts[0:debris_data.part_count]
+    for player_parts in player_data.parts {
+        if do_parts_collide(player_parts[:], parts, player_data.position, debris_data.position) {
+            return true
+        }
+    }
+    return false
+}

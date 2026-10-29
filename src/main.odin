@@ -128,10 +128,12 @@ main :: proc() {
                     generate_random_debris(&debris_manager)
                 } else {
                     if rl.CheckCollisionRecs(player_bounds, bounds) {
-                        sliced_debris := debris_manager.active_debris[0:]
-                        array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
-                        debris_manager.debris_count -= 1
-                        generate_random_debris(&debris_manager)
+                        if does_collide_with_player(&player_data, &debris) {
+                            sliced_debris := debris_manager.active_debris[0:]
+                            array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
+                            debris_manager.debris_count -= 1
+                            generate_random_debris(&debris_manager)
+                        }
                     }
                 }
             }
@@ -139,7 +141,6 @@ main :: proc() {
 
         {
             // Render the world
-
             rl.BeginTextureMode(render_target)
             defer rl.EndTextureMode()
 
