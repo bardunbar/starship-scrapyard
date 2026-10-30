@@ -74,7 +74,7 @@ does_collide_with_player :: proc(player_data: ^Player_Data, debris_data: ^Debris
     return found_collision, player_local_collision_position, debris_translation
 }
 
-weld_debris_to_player :: proc(player_data: ^Player_Data, debris_data: ^Debris_Data, player_pos, debris_translation: [2]i32) {
+weld_debris_to_player :: proc(player_data: ^Player_Data, debris_data: ^Debris_Data, debris_translation: [2]i32) {
 
     for part in debris_data.parts[0:debris_data.part_count] {
         part_array := &player_data.parts[part.id]

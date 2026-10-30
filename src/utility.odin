@@ -15,3 +15,14 @@ to_vector :: proc (source: [2]i32) -> rl.Vector2 {
 part_position :: proc (source: [2]i32) -> [2]i32 {
     return source * ship_part_size
 }
+
+part_rect :: proc(origin: rl.Vector2, location: [2]i32) -> rl.Rectangle {
+    location := part_position(location)
+    position := to_vector(location) + origin
+    return rl.Rectangle {
+        position.x,
+        position.y,
+        f32(ship_part_size.x),
+        f32(ship_part_size.y),
+    }
+}

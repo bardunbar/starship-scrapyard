@@ -4,6 +4,7 @@ import "core:mem"
 import "core:log"
 import rl "vendor:raylib"
 import "core:fmt"
+import "core:math"
 
 SCREEN_WIDTH :: 720
 SCREEN_HEIGHT :: 720
@@ -74,19 +75,19 @@ main :: proc() {
     }
 
     append(&player_data.parts[PartId.Hull], PartData { position = { 0, -1 }, id = .Hull } )
-    append(&player_data.parts[PartId.Hull], PartData { position = { 1, -1 }, id = .Hull } )
-    append(&player_data.parts[PartId.Hull], PartData { position = { -1, -1 }, id = .Hull } )
+//    append(&player_data.parts[PartId.Hull], PartData { position = { 1, -1 }, id = .Hull } )
+//    append(&player_data.parts[PartId.Hull], PartData { position = { -1, -1 }, id = .Hull } )
     append(&player_data.parts[PartId.Hull], PartData { position = { 0, -2 }, id = .Hull } )
 
     append(&player_data.parts[PartId.Thruster], PartData { position = { 1, 0 }, id = .Thruster})
     append(&player_data.parts[PartId.Thruster], PartData { position = { -1, 0 }, id = .Thruster})
 
-    append(&player_data.parts[PartId.Blaster], PartData { position = { 2, -1 }, id = .Blaster})
-    append(&player_data.parts[PartId.Blaster], PartData { position = { -2, -1 }, id = .Blaster})
+//    append(&player_data.parts[PartId.Blaster], PartData { position = { 2, -1 }, id = .Blaster})
+//    append(&player_data.parts[PartId.Blaster], PartData { position = { -2, -1 }, id = .Blaster})
 
     append(&player_data.parts[PartId.Shield], PartData { position = { 0, -3 }, id = .Shield } )
-    append(&player_data.parts[PartId.Shield], PartData { position = { 1, -2 }, id = .Shield } )
-    append(&player_data.parts[PartId.Shield], PartData { position = { -1, -2 }, id = .Shield } )
+//    append(&player_data.parts[PartId.Shield], PartData { position = { 1, -2 }, id = .Shield } )
+//    append(&player_data.parts[PartId.Shield], PartData { position = { -1, -2 }, id = .Shield } )
 
     debris_manager := Debris_Manager {}
     generate_random_debris(&debris_manager)
@@ -127,17 +128,40 @@ main :: proc() {
                     debris_manager.debris_count -= 1
                     generate_random_debris(&debris_manager)
                 } else {
-                    if rl.CheckCollisionRecs(player_bounds, bounds) {
-                        should_weld, player_pos, debris_translation := does_collide_with_player(&player_data, &debris)
-                        if should_weld {
-                            weld_debris_to_player(&player_data, &debris, player_pos, debris_translation)
+                    contacts := get_part_contacts(&player_data, &debris)
+
+                    running_slide_adjustment: f32 = 0
+                    should_weld := false
+                    for contact, index in contacts[:debris.part_count] {
+                        if contact.do_weld {
+                            should_weld = true
+                            weld_debris_to_player(&player_data, &debris, contact.player_relative_location)
 
                             sliced_debris := debris_manager.active_debris[0:]
                             array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
                             debris_manager.debris_count -= 1
                             generate_random_debris(&debris_manager)
+                            break
+                        } else if contact.do_slide {
+                            running_slide_adjustment = contact.slide_offset
                         }
                     }
+
+                    if !should_weld {
+                        debris.position.x += running_slide_adjustment
+                    }
+
+//                    if rl.CheckCollisionRecs(player_bounds, bounds) {
+//                        should_weld, player_pos, debris_translation := does_collide_with_player(&player_data, &debris)
+//                        if should_weld {
+//                            weld_debris_to_player(&player_data, &debris, debris_translation)
+//
+//                            sliced_debris := debris_manager.active_debris[0:]
+//                            array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
+//                            debris_manager.debris_count -= 1
+//                            generate_random_debris(&debris_manager)
+//                        }
+//                    }
                 }
             }
         }
