@@ -12,6 +12,7 @@ SCREEN_HEIGHT :: 1080
 GAME_NAME :: "Starship Scrapyard"
 
 ship_part_size: [2]i32 = {}
+screen_rect: rl.Rectangle = {}
 
 main :: proc() {
     when ODIN_DEBUG {
@@ -67,11 +68,23 @@ main :: proc() {
         .Shield = shield_texture,
     }
 
+    camera := rl.Camera2D {
+        target = {},
+        offset = {},
+        rotation = 0,
+        zoom = 1,
+    }
+
+    screen_rect = get_screen_bounds(camera)
+
+    initialize_starfields()
+    defer teardown_starfields()
+
     player_data := Player_Data {
-        position = rl.Vector2 { f32(SCREEN_WIDTH / 2 - core_texture.width / 2), f32(SCREEN_HEIGHT - 50 - core_texture.height) },
+        position = rl.Vector2 { screen_rect.width / 2 - f32(core_texture.width / 2), screen_rect.height - f32(50 + core_texture.height) },
         texture = core_texture,
-        horizontal_speed = 200,
-        vertical_speed = 100,
+        horizontal_speed = 300,
+        vertical_speed = 150,
     }
 
     append(&player_data.parts[PartId.Hull], PartData { position = { 0, -1 }, id = .Hull } )
@@ -92,12 +105,6 @@ main :: proc() {
     debris_manager := Debris_Manager {}
     generate_random_debris(&debris_manager)
 
-    camera := rl.Camera2D {
-        target = {},
-        offset = {},
-        rotation = 0,
-        zoom = 1,
-    }
 
     rl.SetTargetFPS(60)
 
@@ -123,9 +130,6 @@ main :: proc() {
 
             player_data.position += rl.Vector2 { input_vector.x *  player_data.horizontal_speed * get_capped_frame_time(), 0 }
 
-//            camera.target = player_data.position
-//            camera.offset = player_data.position
-
             player_bounds := get_player_bounds(&player_data)
 
             // Update any active debris -- Loop in reverse so we can remove with a swap
@@ -133,7 +137,7 @@ main :: proc() {
                debris.position += rl.Vector2 { 0, player_data.vertical_speed * get_capped_frame_time() }
                 bounds := get_debris_bounds(&debris)
 
-                if (bounds.y > SCREEN_HEIGHT) {
+                if (bounds.y > screen_rect.height) {
                     sliced_debris := debris_manager.active_debris[0:]
                     array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
                     debris_manager.debris_count -= 1
@@ -163,6 +167,8 @@ main :: proc() {
                     }
                 }
             }
+
+            screen_rect = get_screen_bounds(camera)
         }
 
         {
@@ -174,6 +180,8 @@ main :: proc() {
             defer rl.EndMode2D()
 
             rl.ClearBackground(rl.BLACK)
+
+            render_starfield_layer()
 
             rl.DrawTexture(player_data.texture, i32(player_data.position.x), i32(player_data.position.y), rl.WHITE)
             player_pos_int := [2]i32 { i32(player_data.position.x), i32(player_data.position.y)}

@@ -30,3 +30,15 @@ part_rect :: proc(origin: rl.Vector2, location: [2]i32) -> rl.Rectangle {
 get_capped_frame_time :: proc() -> f32 {
     return min(rl.GetFrameTime(), 0.1)
 }
+
+get_screen_bounds :: proc(camera: rl.Camera2D) -> rl.Rectangle {
+    screen_tl := rl.GetScreenToWorld2D({}, camera)
+    screen_br := rl.GetScreenToWorld2D({SCREEN_WIDTH, SCREEN_HEIGHT}, camera)
+
+    return rl.Rectangle {
+        x = screen_tl.x,
+        y = screen_tl.y,
+        width = screen_br.x - screen_tl.x,
+        height = screen_br.y - screen_tl.y,
+    }
+}

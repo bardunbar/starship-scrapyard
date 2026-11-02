@@ -33,7 +33,7 @@ generate_random_debris :: proc(manager: ^Debris_Manager) {
 
         reset_debris(new_debris)
 
-        new_debris.position = rl.Vector2 { SCREEN_WIDTH / 2, 200 }
+        new_debris.position = rl.Vector2 { screen_rect.width / 2, 200 }
 
         part_count := rand.int32_range(2, 8)
 
@@ -70,7 +70,7 @@ generate_random_debris :: proc(manager: ^Debris_Manager) {
 
         bounds := get_debris_bounds(new_debris)
         new_debris.position.y = -bounds.height
-        new_debris.position.x = rand.float32_range(bounds.width, SCREEN_WIDTH - bounds.width)
+        new_debris.position.x = rand.float32_range(bounds.width, screen_rect.width - bounds.width)
     }
 }
 
