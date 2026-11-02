@@ -26,3 +26,7 @@ part_rect :: proc(origin: rl.Vector2, location: [2]i32) -> rl.Rectangle {
         f32(ship_part_size.y),
     }
 }
+
+get_capped_frame_time :: proc() -> f32 {
+    return min(rl.GetFrameTime(), 0.1)
+}

@@ -6,8 +6,8 @@ import rl "vendor:raylib"
 import "core:fmt"
 import "core:math"
 
-SCREEN_WIDTH :: 720
-SCREEN_HEIGHT :: 720
+SCREEN_WIDTH :: 1920
+SCREEN_HEIGHT :: 1080
 
 GAME_NAME :: "Starship Scrapyard"
 
@@ -75,26 +75,34 @@ main :: proc() {
     }
 
     append(&player_data.parts[PartId.Hull], PartData { position = { 0, -1 }, id = .Hull } )
-//    append(&player_data.parts[PartId.Hull], PartData { position = { 1, -1 }, id = .Hull } )
-//    append(&player_data.parts[PartId.Hull], PartData { position = { -1, -1 }, id = .Hull } )
+    append(&player_data.parts[PartId.Hull], PartData { position = { 1, -1 }, id = .Hull } )
+    append(&player_data.parts[PartId.Hull], PartData { position = { -1, -1 }, id = .Hull } )
     append(&player_data.parts[PartId.Hull], PartData { position = { 0, -2 }, id = .Hull } )
 
     append(&player_data.parts[PartId.Thruster], PartData { position = { 1, 0 }, id = .Thruster})
     append(&player_data.parts[PartId.Thruster], PartData { position = { -1, 0 }, id = .Thruster})
 
-//    append(&player_data.parts[PartId.Blaster], PartData { position = { 2, -1 }, id = .Blaster})
-//    append(&player_data.parts[PartId.Blaster], PartData { position = { -2, -1 }, id = .Blaster})
+    append(&player_data.parts[PartId.Blaster], PartData { position = { 2, -1 }, id = .Blaster})
+    append(&player_data.parts[PartId.Blaster], PartData { position = { -2, -1 }, id = .Blaster})
 
     append(&player_data.parts[PartId.Shield], PartData { position = { 0, -3 }, id = .Shield } )
-//    append(&player_data.parts[PartId.Shield], PartData { position = { 1, -2 }, id = .Shield } )
-//    append(&player_data.parts[PartId.Shield], PartData { position = { -1, -2 }, id = .Shield } )
+    append(&player_data.parts[PartId.Shield], PartData { position = { 1, -2 }, id = .Shield } )
+    append(&player_data.parts[PartId.Shield], PartData { position = { -1, -2 }, id = .Shield } )
 
     debris_manager := Debris_Manager {}
     generate_random_debris(&debris_manager)
 
+    camera := rl.Camera2D {
+        target = {},
+        offset = {},
+        rotation = 0,
+        zoom = 1,
+    }
+
     rl.SetTargetFPS(60)
 
     frame_counter := 0
+
 
     for !rl.WindowShouldClose() {
 
@@ -113,13 +121,16 @@ main :: proc() {
                 input_vector.x += 1
             }
 
-            player_data.position += rl.Vector2 { input_vector.x *  player_data.horizontal_speed * rl.GetFrameTime(), 0 }
+            player_data.position += rl.Vector2 { input_vector.x *  player_data.horizontal_speed * get_capped_frame_time(), 0 }
+
+//            camera.target = player_data.position
+//            camera.offset = player_data.position
 
             player_bounds := get_player_bounds(&player_data)
 
             // Update any active debris -- Loop in reverse so we can remove with a swap
             #reverse for &debris, index in debris_manager.active_debris[0:debris_manager.debris_count] {
-               debris.position += rl.Vector2 { 0, player_data.vertical_speed * rl.GetFrameTime() }
+               debris.position += rl.Vector2 { 0, player_data.vertical_speed * get_capped_frame_time() }
                 bounds := get_debris_bounds(&debris)
 
                 if (bounds.y > SCREEN_HEIGHT) {
@@ -150,18 +161,6 @@ main :: proc() {
                     if !should_weld {
                         debris.position.x += running_slide_adjustment
                     }
-
-//                    if rl.CheckCollisionRecs(player_bounds, bounds) {
-//                        should_weld, player_pos, debris_translation := does_collide_with_player(&player_data, &debris)
-//                        if should_weld {
-//                            weld_debris_to_player(&player_data, &debris, debris_translation)
-//
-//                            sliced_debris := debris_manager.active_debris[0:]
-//                            array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
-//                            debris_manager.debris_count -= 1
-//                            generate_random_debris(&debris_manager)
-//                        }
-//                    }
                 }
             }
         }
@@ -170,6 +169,9 @@ main :: proc() {
             // Render the world
             rl.BeginTextureMode(render_target)
             defer rl.EndTextureMode()
+
+            rl.BeginMode2D(camera)
+            defer rl.EndMode2D()
 
             rl.ClearBackground(rl.BLACK)
 

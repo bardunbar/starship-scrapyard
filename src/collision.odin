@@ -79,19 +79,33 @@ get_part_contacts :: proc(player_data: ^Player_Data, debris: ^Debris_Data) -> [l
                     slide_offset = -overlap.width
                 case .BL:
                     // Slide or weld depending on overlap width
-                    if overlap.width < f32(ship_part_size.x) * 0.2 {
+                    if overlap.width < f32(ship_part_size.x) * 0.25 {
                         do_slide = true
                         slide_offset = overlap.width
                     } else {
-                        do_weld = true
+                        // Before welding we need to make sure that there is a solid player part at debris_relative_location + (0,1)
+                        if does_player_contain_part(player_data, debris_relative_location + part.position + { 0, 1 }) {
+                            do_weld = true
+                        } else {
+                            // If there is not, then do slide with the overlap width
+                            do_slide = true
+                            slide_offset = overlap.width
+                        }
                     }
                 case .BR:
                     // Slide or weld depending on overlap width
-                    if overlap.width < f32(ship_part_size.x) * 0.2 {
+                    if overlap.width < f32(ship_part_size.x) * 0.25 {
                         do_slide = true
                         slide_offset = -overlap.width
                     } else {
-                        do_weld = true
+                        // Before welding we need to make sure that there is a solid player part at debris_relative_location + (0,1)
+                        if does_player_contain_part(player_data, debris_relative_location + part.position + { 0, 1 }) {
+                            do_weld = true
+                        } else {
+                        // If there is not, then do slide with the overlap width
+                            do_slide = true
+                            slide_offset = -overlap.width
+                        }
                     }
                 }
             }

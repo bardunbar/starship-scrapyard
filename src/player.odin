@@ -81,3 +81,15 @@ weld_debris_to_player :: proc(player_data: ^Player_Data, debris_data: ^Debris_Da
         append(part_array, PartData { position = part.position + debris_translation, id = part.id })
     }
 }
+
+does_player_contain_part :: proc(player_data: ^Player_Data, part_location: [2]i32) -> bool {
+    for parts in player_data.parts {
+        for part_data in parts {
+            if part_data.position == part_location {
+                return true
+            }
+        }
+    }
+
+    return false
+}
