@@ -34,7 +34,8 @@ debris_update :: proc(manager: ^Debris_Manager) {
             sliced_debris := manager.active_debris[0:]
             array_swap_back(&sliced_debris, index, int(manager.debris_count - 1))
             manager.debris_count -= 1
-            generate_random_debris(manager)
+            manager.debris_spawn_time = 0
+//            generate_random_debris(manager)
         }
 
     }
@@ -134,7 +135,8 @@ generate_random_debris :: proc(manager: ^Debris_Manager) {
             }
 
             if no_issues {
-                part_id := rand.choice_enum(PartId)
+//                part_id := rand.choice_enum(PartId)
+                part_id := PartId(rand.int32_range(0, 3))
                 new_debris.parts[i] = create_part(current_part_pos, part_id)
             } else {
                 part_count = i

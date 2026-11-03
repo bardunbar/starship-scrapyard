@@ -10,6 +10,7 @@ SCREEN_WIDTH :: 1920
 SCREEN_HEIGHT :: 1080
 
 GAME_NAME :: "Starship Scrapyard"
+BASE_PLAYER_SPEED :f32: 150
 
 ship_part_size: [2]i32 = {}
 screen_rect: rl.Rectangle = {}
@@ -91,29 +92,29 @@ main :: proc() {
         position = rl.Vector2 { screen_rect.width / 2 - f32(core_texture.width / 2), screen_rect.height - f32(50 + core_texture.height) },
         texture = core_texture,
         horizontal_speed = 300,
-        vertical_speed = 150,
+        vertical_speed = BASE_PLAYER_SPEED,
     }
 
     append(&player_data.parts[PartId.Hull], create_part({ 0, -1 }, .Hull))
     append(&player_data.parts[PartId.Hull], create_part({ 1, -1 }, .Hull))
     append(&player_data.parts[PartId.Hull], create_part({ -1, -1 }, .Hull))
-    append(&player_data.parts[PartId.Hull], create_part({ 0, -2 }, .Hull))
-
-    append(&player_data.parts[PartId.Thruster], create_part({ 1, 0 }, .Thruster))
-    append(&player_data.parts[PartId.Thruster], create_part({ -1, 0 }, .Thruster))
-
-    append(&player_data.parts[PartId.Blaster], create_part({ 2, -1 }, .Blaster))
-    append(&player_data.parts[PartId.Blaster], create_part({ -2, -1 }, .Blaster))
-
-    append(&player_data.parts[PartId.Shield], create_part({ 0, -3 }, .Shield))
-    append(&player_data.parts[PartId.Shield], create_part({ 1, -2 }, .Shield))
-    append(&player_data.parts[PartId.Shield], create_part({ -1, -2 }, .Shield))
+//    append(&player_data.parts[PartId.Hull], create_part({ 0, -2 }, .Hull))
+//
+//    append(&player_data.parts[PartId.Thruster], create_part({ 1, 0 }, .Thruster))
+//    append(&player_data.parts[PartId.Thruster], create_part({ -1, 0 }, .Thruster))
+//
+//    append(&player_data.parts[PartId.Blaster], create_part({ 2, -1 }, .Blaster))
+//    append(&player_data.parts[PartId.Blaster], create_part({ -2, -1 }, .Blaster))
+//
+//    append(&player_data.parts[PartId.Shield], create_part({ 0, -3 }, .Shield))
+//    append(&player_data.parts[PartId.Shield], create_part({ 1, -2 }, .Shield))
+//    append(&player_data.parts[PartId.Shield], create_part({ -1, -2 }, .Shield))
 
     debris_manager := Debris_Manager {
-        debris_spawn_time = DEBRIS_SPAWN_INTERVAL
+        debris_spawn_time = 0
     }
 //    generate_random_debris(&debris_manager)
-    generate_junk_debris(&debris_manager)
+//    generate_junk_debris(&debris_manager)
 
     destruction = create_destruction_system()
     projectiles = create_projectile_system()
@@ -160,11 +161,12 @@ main :: proc() {
                 bounds := get_debris_bounds(&debris)
 
                 if (bounds.y > screen_rect.height) {
-                    sliced_debris := debris_manager.active_debris[0:]
-                    array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
-                    debris_manager.debris_count -= 1
+                    debris.part_count = 0
+//                    sliced_debris := debris_manager.active_debris[0:]
+//                    array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
+//                    debris_manager.debris_count -= 1
 //                    generate_random_debris(&debris_manager)
-                    generate_junk_debris(&debris_manager)
+//                    generate_junk_debris(&debris_manager)
                 } else {
                     contacts := get_part_contacts(&player_data, &debris)
 
@@ -182,11 +184,14 @@ main :: proc() {
                                 should_weld = true
                                 weld_debris_to_player(&player_data, &debris, contact.player_relative_location)
 
-                                sliced_debris := debris_manager.active_debris[0:]
-                                array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
-                                debris_manager.debris_count -= 1
+
+                                player_data.vertical_speed = BASE_PLAYER_SPEED + f32(len(player_data.parts[.Thruster])) * 10
+//                                sliced_debris := debris_manager.active_debris[0:]
+//                                array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
+//                                debris_manager.debris_count -= 1
+                                debris.part_count = 0
 //                                generate_random_debris(&debris_manager)
-                                generate_junk_debris(&debris_manager)
+//                                generate_junk_debris(&debris_manager)
                                 break
                             }
                         } else if contact.do_slide {

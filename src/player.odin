@@ -83,7 +83,7 @@ weld_debris_to_player :: proc(player_data: ^Player_Data, debris_data: ^Debris_Da
     }
 
     // Since some debris might be shot apart we need to do this just in case
-//    player_check_for_unreachable_parts(player_data)
+    player_check_for_unreachable_parts(player_data)
 }
 
 does_player_contain_part :: proc(player_data: ^Player_Data, part_location: [2]i32) -> bool {
