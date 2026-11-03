@@ -93,3 +93,38 @@ does_player_contain_part :: proc(player_data: ^Player_Data, part_location: [2]i3
 
     return false
 }
+
+damage_player :: proc(player_data: ^Player_Data, impacting_debris: ^Debris_Data, impact_location: [2]i32, debris_part_index: int) {
+    debris_part := &impacting_debris.parts[debris_part_index]
+
+    // Find the tile that has been hit
+    search: for &parts in player_data.parts {
+        for &part_data, index in parts {
+            if part_data.position == impact_location {
+                should_break := false
+                // Deal damage to the debris
+                debris_part.health -= 1
+                if debris_part.health <= 0 {
+                    sliced_debris := impacting_debris.parts[:impacting_debris.part_count]
+                    array_swap_back(&sliced_debris, debris_part_index, int(impacting_debris.part_count - 1))
+                    impacting_debris.part_count -= 1
+                    should_break = true
+                }
+
+                // Deal damage to the part
+                part_data.health -= 1
+                if part_data.health <= 0 {
+                    destruction_add_part(&destruction, player_data^, part_data.id, part_data.position)
+                    unordered_remove(&parts, index)
+                    should_break = true
+                }
+
+                if should_break {
+                    break search
+                }
+            }
+        }
+    }
+
+
+}

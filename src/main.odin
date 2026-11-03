@@ -13,6 +13,8 @@ GAME_NAME :: "Starship Scrapyard"
 
 ship_part_size: [2]i32 = {}
 screen_rect: rl.Rectangle = {}
+part_textures: PartTextures = {}
+destruction: Destruction_System = {}
 
 main :: proc() {
     when ODIN_DEBUG {
@@ -64,7 +66,7 @@ main :: proc() {
     junk_texture := rl.LoadTexture("assets/kenny/puzzle pack/element_black_square.png")
     defer rl.UnloadTexture(junk_texture)
 
-    part_textures := PartTextures {
+    part_textures = PartTextures {
         .Hull = hull_texture,
         .Blaster = blaster_texture,
         .Thruster = thruster_texture,
@@ -91,24 +93,26 @@ main :: proc() {
         vertical_speed = 150,
     }
 
-    append(&player_data.parts[PartId.Hull], PartData { position = { 0, -1 }, id = .Hull } )
-    append(&player_data.parts[PartId.Hull], PartData { position = { 1, -1 }, id = .Hull } )
-    append(&player_data.parts[PartId.Hull], PartData { position = { -1, -1 }, id = .Hull } )
-    append(&player_data.parts[PartId.Hull], PartData { position = { 0, -2 }, id = .Hull } )
+    append(&player_data.parts[PartId.Hull], create_part({ 0, -1 }, .Hull))
+    append(&player_data.parts[PartId.Hull], create_part({ 1, -1 }, .Hull))
+    append(&player_data.parts[PartId.Hull], create_part({ -1, -1 }, .Hull))
+    append(&player_data.parts[PartId.Hull], create_part({ 0, -2 }, .Hull))
 
-    append(&player_data.parts[PartId.Thruster], PartData { position = { 1, 0 }, id = .Thruster})
-    append(&player_data.parts[PartId.Thruster], PartData { position = { -1, 0 }, id = .Thruster})
+    append(&player_data.parts[PartId.Thruster], create_part({ 1, 0 }, .Thruster))
+    append(&player_data.parts[PartId.Thruster], create_part({ -1, 0 }, .Thruster))
 
-    append(&player_data.parts[PartId.Blaster], PartData { position = { 2, -1 }, id = .Blaster})
-    append(&player_data.parts[PartId.Blaster], PartData { position = { -2, -1 }, id = .Blaster})
+    append(&player_data.parts[PartId.Blaster], create_part({ 2, -1 }, .Blaster))
+    append(&player_data.parts[PartId.Blaster], create_part({ -2, -1 }, .Blaster))
 
-    append(&player_data.parts[PartId.Shield], PartData { position = { 0, -3 }, id = .Shield } )
-    append(&player_data.parts[PartId.Shield], PartData { position = { 1, -2 }, id = .Shield } )
-    append(&player_data.parts[PartId.Shield], PartData { position = { -1, -2 }, id = .Shield } )
+    append(&player_data.parts[PartId.Shield], create_part({ 0, -3 }, .Shield))
+    append(&player_data.parts[PartId.Shield], create_part({ 1, -2 }, .Shield))
+    append(&player_data.parts[PartId.Shield], create_part({ -1, -2 }, .Shield))
 
     debris_manager := Debris_Manager {}
-    generate_random_debris(&debris_manager)
+//    generate_random_debris(&debris_manager)
+    generate_junk_debris(&debris_manager)
 
+    destruction = create_destruction_system()
 
     rl.SetTargetFPS(60)
 
@@ -148,7 +152,8 @@ main :: proc() {
                     sliced_debris := debris_manager.active_debris[0:]
                     array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
                     debris_manager.debris_count -= 1
-                    generate_random_debris(&debris_manager)
+//                    generate_random_debris(&debris_manager)
+                    generate_junk_debris(&debris_manager)
                 } else {
                     contacts := get_part_contacts(&player_data, &debris)
 
@@ -156,14 +161,30 @@ main :: proc() {
                     should_weld := false
                     for contact, index in contacts[:debris.part_count] {
                         if contact.do_weld {
-                            should_weld = true
-                            weld_debris_to_player(&player_data, &debris, contact.player_relative_location)
 
-                            sliced_debris := debris_manager.active_debris[0:]
-                            array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
-                            debris_manager.debris_count -= 1
-                            generate_random_debris(&debris_manager)
-                            break
+                            // Check the contact type, if its junk then we need to handle junk.
+                            if debris.parts[index].id == .Junk {
+                                impacting_location := contact.player_relative_location + debris.parts[index].position + {0, 1}
+                                damage_player(&player_data, &debris, impacting_location, index)
+                                if debris.part_count <= 0 {
+                                    sliced_debris := debris_manager.active_debris[0:]
+                                    array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
+                                    debris_manager.debris_count -= 1
+                                    //                                generate_random_debris(&debris_manager)
+                                    generate_junk_debris(&debris_manager)
+                                }
+                            } else {
+                                // Otherwise do a weld
+                                should_weld = true
+                                weld_debris_to_player(&player_data, &debris, contact.player_relative_location)
+
+                                sliced_debris := debris_manager.active_debris[0:]
+                                array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
+                                debris_manager.debris_count -= 1
+//                                generate_random_debris(&debris_manager)
+                                generate_junk_debris(&debris_manager)
+                                break
+                            }
                         } else if contact.do_slide {
                             running_slide_adjustment = contact.slide_offset
                         }
@@ -178,6 +199,7 @@ main :: proc() {
             screen_rect = get_screen_bounds(camera)
 
             update_starfields()
+            destruction_update(&destruction)
         }
 
         {
@@ -225,6 +247,8 @@ main :: proc() {
                     rl.DrawRectangleLinesEx(get_debris_bounds(&current_debris), 4.0, rl.YELLOW)
                 }
             }
+
+            destruction_render(destruction)
         }
 
         {

@@ -8,9 +8,18 @@ PartId :: enum {Hull, Blaster, Thruster, Shield, Junk}
 PartData :: struct {
     position: [2]i32,
     id: PartId,
+    health: i32,
 }
 
 PartTextures :: [PartId] rl.Texture
+
+create_part :: proc(position: [2]i32, id: PartId, health: i32 = 1) -> PartData {
+    return {
+        position = position,
+        id = id,
+        health = health,
+    }
+}
 
 get_part_bounds :: proc(parts: []PartData) -> rl.Rectangle {
     min_pos: [2]i32 = {}
