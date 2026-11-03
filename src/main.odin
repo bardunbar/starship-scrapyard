@@ -137,11 +137,11 @@ main :: proc() {
 
             // Handle inputs
             input_vector := rl.Vector2 { 0, 0 }
-            if rl.IsKeyDown(rl.KeyboardKey.A) {
+            if rl.IsKeyDown(rl.KeyboardKey.A) || rl.IsKeyDown(rl.KeyboardKey.LEFT) {
                 input_vector.x -= 1
             }
 
-            if rl.IsKeyDown(rl.KeyboardKey.D) {
+            if rl.IsKeyDown(rl.KeyboardKey.D) || rl.IsKeyDown(rl.KeyboardKey.RIGHT){
                 input_vector.x += 1
             }
 
