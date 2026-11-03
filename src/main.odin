@@ -4,7 +4,7 @@ import "core:mem"
 import "core:log"
 import rl "vendor:raylib"
 import "core:fmt"
-import "core:math"
+//import "core:math"
 
 SCREEN_WIDTH :: 1920
 SCREEN_HEIGHT :: 1080
@@ -169,6 +169,8 @@ main :: proc() {
             }
 
             screen_rect = get_screen_bounds(camera)
+
+            update_starfields()
         }
 
         {
