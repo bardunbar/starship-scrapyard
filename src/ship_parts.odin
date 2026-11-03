@@ -3,7 +3,7 @@
 import "core:math"
 import rl "vendor:raylib"
 
-PartId :: enum {Hull, Blaster, Thruster, Shield}
+PartId :: enum {Hull, Blaster, Thruster, Shield, Junk}
 
 PartData :: struct {
     position: [2]i32,

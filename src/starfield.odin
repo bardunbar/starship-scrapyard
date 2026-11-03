@@ -41,15 +41,15 @@ initialize_starfields :: proc() {
     }
 
     for &layer in starfield.layers {
-        layer.fields[0] = rl.LoadRenderTexture(i32(screen_rect.width), i32(screen_rect.height))
-        layer.fields[1] = rl.LoadRenderTexture(i32(screen_rect.width), i32(screen_rect.height))
+        layer.fields[0] = rl.LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT)
+        layer.fields[1] = rl.LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         {
             rl.BeginTextureMode(layer.fields[0])
             defer rl.EndTextureMode()
 
             for i in 0..<layer.star_count {
-                rl.DrawTexture(star_texture, rand.int32_range(0, i32(screen_rect.width)), rand.int32_range(0, i32(screen_rect.height) - star_texture.height), rl.WHITE)
+                rl.DrawTexture(star_texture, rand.int32_range(0, SCREEN_WIDTH), rand.int32_range(0, SCREEN_HEIGHT - star_texture.height), rl.WHITE)
             }
         }
 
@@ -58,7 +58,7 @@ initialize_starfields :: proc() {
             defer rl.EndTextureMode()
 
             for i in 0..<layer.star_count {
-                rl.DrawTexture(star_texture, rand.int32_range(0, i32(screen_rect.width)), rand.int32_range(0, i32(screen_rect.height) - star_texture.height), rl.WHITE)
+                rl.DrawTexture(star_texture, rand.int32_range(0, SCREEN_WIDTH), rand.int32_range(0, SCREEN_HEIGHT - star_texture.height), rl.WHITE)
             }
         }
     }
@@ -75,7 +75,7 @@ teardown_starfields :: proc() {
 update_starfields :: proc() {
     for &layer in starfield.layers {
         layer.position += layer.speed * get_capped_frame_time()
-        if layer.position >= screen_rect.y + screen_rect.height {
+        if layer.position >= SCREEN_HEIGHT {
             layer.active_layer = (layer.active_layer + 1) % 2
             layer.position -= f32(layer.fields[layer.active_layer].texture.height)
         }
@@ -87,7 +87,7 @@ render_starfield_layer :: proc() {
         active_texture := layer.fields[layer.active_layer]
         other_texture := layer.fields[(layer.active_layer + 1) % 2]
 
-        rl.DrawTexture(active_texture.texture, i32(screen_rect.x), i32(screen_rect.y + layer.position), layer.color)
-        rl.DrawTexture(other_texture.texture, i32(screen_rect.x), i32(screen_rect.y + layer.position) - other_texture.texture.height, layer.color)
+        rl.DrawTexture(active_texture.texture, 0, i32(layer.position), layer.color)
+        rl.DrawTexture(other_texture.texture, 0, i32(layer.position) - other_texture.texture.height, layer.color)
     }
 }

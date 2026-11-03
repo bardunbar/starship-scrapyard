@@ -61,11 +61,15 @@ main :: proc() {
     shield_texture := rl.LoadTexture("assets/kenny/puzzle pack/element_blue_square.png")
     defer rl.UnloadTexture(shield_texture)
 
+    junk_texture := rl.LoadTexture("assets/kenny/puzzle pack/element_black_square.png")
+    defer rl.UnloadTexture(junk_texture)
+
     part_textures := PartTextures {
         .Hull = hull_texture,
         .Blaster = blaster_texture,
         .Thruster = thruster_texture,
         .Shield = shield_texture,
+        .Junk = junk_texture,
     }
 
     camera := rl.Camera2D {
@@ -117,6 +121,9 @@ main :: proc() {
 
         {
             // Update game logic
+            if rl.IsKeyPressed(rl.KeyboardKey.B) {
+                rl.ToggleBorderlessWindowed()
+            }
 
             // Handle inputs
             input_vector := rl.Vector2 { 0, 0 }
@@ -178,12 +185,11 @@ main :: proc() {
             rl.BeginTextureMode(render_target)
             defer rl.EndTextureMode()
 
+            rl.ClearBackground(rl.BLACK)
+            render_starfield_layer()
+
             rl.BeginMode2D(camera)
             defer rl.EndMode2D()
-
-            rl.ClearBackground(rl.BLACK)
-
-            render_starfield_layer()
 
             rl.DrawTexture(player_data.texture, i32(player_data.position.x), i32(player_data.position.y), rl.WHITE)
             player_pos_int := [2]i32 { i32(player_data.position.x), i32(player_data.position.y)}
@@ -227,15 +233,19 @@ main :: proc() {
             rl.BeginDrawing()
             defer rl.EndDrawing()
 
-            rl.ClearBackground(rl.RAYWHITE)
+            rl.ClearBackground(rl.BLACK)
 
+            render_aspect := f32(render_target.texture.width) / f32(render_target.texture.height)
+            target_height := f32(rl.GetScreenHeight())
+            target_width := render_aspect * target_height
+            target_x := (f32(rl.GetScreenWidth()) - target_width) / 2.0
             rl.DrawTexturePro(
                 render_target.texture,
                 rl.Rectangle {
                     0, 0, f32(render_target.texture.width), -f32(render_target.texture.height),
                 },
                 rl.Rectangle {
-                    0, 0, f32(render_target.texture.width), f32(render_target.texture.height),
+                    target_x, 0, target_width, target_height,
                 },
                 rl.Vector2 { 0, 0 },
                 0.0,
