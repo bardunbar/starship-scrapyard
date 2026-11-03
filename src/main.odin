@@ -11,6 +11,7 @@ SCREEN_HEIGHT :: 1080
 
 GAME_NAME :: "Starship Scrapyard"
 BASE_PLAYER_SPEED :f32: 150
+BASE_PLAYER_H_SPEED :f32: 300
 
 ship_part_size: [2]i32 = {}
 screen_rect: rl.Rectangle = {}
@@ -91,13 +92,16 @@ main :: proc() {
     player_data := Player_Data {
         position = rl.Vector2 { screen_rect.width / 2 - f32(core_texture.width / 2), screen_rect.height - f32(50 + core_texture.height) },
         texture = core_texture,
-        horizontal_speed = 300,
+        horizontal_speed = BASE_PLAYER_H_SPEED,
         vertical_speed = BASE_PLAYER_SPEED,
     }
 
-    append(&player_data.parts[PartId.Hull], create_part({ 0, -1 }, .Hull))
-    append(&player_data.parts[PartId.Hull], create_part({ 1, -1 }, .Hull))
-    append(&player_data.parts[PartId.Hull], create_part({ -1, -1 }, .Hull))
+    player_reset(&player_data)
+
+//    append(&player_data.parts[PartId.Hull], create_part({ 0, -1 }, .Hull))
+//    append(&player_data.parts[PartId.Hull], create_part({ 1, -1 }, .Hull))
+//    append(&player_data.parts[PartId.Hull], create_part({ -1, -1 }, .Hull))
+
 //    append(&player_data.parts[PartId.Hull], create_part({ 0, -2 }, .Hull))
 //
 //    append(&player_data.parts[PartId.Thruster], create_part({ 1, 0 }, .Thruster))
@@ -113,8 +117,6 @@ main :: proc() {
     debris_manager := Debris_Manager {
         debris_spawn_time = 0
     }
-//    generate_random_debris(&debris_manager)
-//    generate_junk_debris(&debris_manager)
 
     destruction = create_destruction_system()
     projectiles = create_projectile_system()
@@ -135,6 +137,16 @@ main :: proc() {
                 rl.ToggleBorderlessWindowed()
             }
 
+            if rl.IsKeyPressed(rl.KeyboardKey.R) {
+                player_reset(&player_data)
+                debris_reset(&debris_manager)
+                projectile_reset(&projectiles)
+                global_pause = false
+            }
+
+            if rl.IsKeyPressed(rl.KeyboardKey.P) {
+                global_pause = !global_pause
+            }
             // Handle inputs
             input_vector := rl.Vector2 { 0, 0 }
             if rl.IsKeyDown(rl.KeyboardKey.A) || rl.IsKeyDown(rl.KeyboardKey.LEFT) {
@@ -162,11 +174,6 @@ main :: proc() {
 
                 if (bounds.y > screen_rect.height) {
                     debris.part_count = 0
-//                    sliced_debris := debris_manager.active_debris[0:]
-//                    array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
-//                    debris_manager.debris_count -= 1
-//                    generate_random_debris(&debris_manager)
-//                    generate_junk_debris(&debris_manager)
                 } else {
                     contacts := get_part_contacts(&player_data, &debris)
 
@@ -179,21 +186,19 @@ main :: proc() {
                             if debris.parts[index].id == .Junk {
                                 impacting_location := contact.player_relative_location + debris.parts[index].position + {0, 1}
                                 damage_player(&player_data, &debris, impacting_location, index)
+                                player_data.vertical_speed = BASE_PLAYER_SPEED + f32(len(player_data.parts[.Thruster])) * 20
+                                player_data.horizontal_speed = BASE_PLAYER_H_SPEED + f32(len(player_data.parts[.Thruster])) * 10
                             } else {
                                 // Otherwise do a weld
                                 should_weld = true
                                 weld_debris_to_player(&player_data, &debris, contact.player_relative_location)
 
-
-                                player_data.vertical_speed = BASE_PLAYER_SPEED + f32(len(player_data.parts[.Thruster])) * 10
-//                                sliced_debris := debris_manager.active_debris[0:]
-//                                array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
-//                                debris_manager.debris_count -= 1
+                                player_data.vertical_speed = BASE_PLAYER_SPEED + f32(len(player_data.parts[.Thruster])) * 20
+                                player_data.horizontal_speed = BASE_PLAYER_H_SPEED + f32(len(player_data.parts[.Thruster])) * 10
                                 debris.part_count = 0
-//                                generate_random_debris(&debris_manager)
-//                                generate_junk_debris(&debris_manager)
                                 break
                             }
+
                         } else if contact.do_slide {
                             running_slide_adjustment = contact.slide_offset
                         }

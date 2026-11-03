@@ -22,6 +22,11 @@ destroy_projectile_system :: proc(ps: ^Projectile_System) {
     rl.UnloadTexture(ps.projectile_texture)
 }
 
+projectile_reset :: proc(ps: ^Projectile_System) {
+    ps.active_projectiles = 0
+}
+
+
 projectile_add :: proc(ps: ^Projectile_System, position: rl.Vector2) {
     if ps.active_projectiles < MAX_PROJECTILES {
         ps.positions[ps.active_projectiles] = position

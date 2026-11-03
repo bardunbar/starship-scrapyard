@@ -1,6 +1,7 @@
 ﻿package main
 
 import rl "vendor:raylib"
+global_pause := false
 
 array_swap_back :: proc (array: ^[]$T, index_to_remove, index_to_swap: int) {
     if (index_to_remove <= index_to_swap && index_to_swap < len(array)) {
@@ -28,6 +29,10 @@ part_rect :: proc(origin: rl.Vector2, location: [2]i32) -> rl.Rectangle {
 }
 
 get_capped_frame_time :: proc() -> f32 {
+    if global_pause {
+        return 0
+    }
+
     return min(rl.GetFrameTime(), 0.1)
 }
 

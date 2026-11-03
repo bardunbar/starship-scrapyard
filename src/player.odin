@@ -34,6 +34,21 @@ get_player_bounds :: proc(player_data: ^Player_Data) -> rl.Rectangle {
     }
 }
 
+player_reset :: proc(player_data: ^Player_Data) {
+    for &parts in player_data.parts {
+        clear(&parts)
+    }
+
+    append(&player_data.parts[PartId.Hull], create_part({ 0, -1 }, .Hull))
+    append(&player_data.parts[PartId.Hull], create_part({ 1, -1 }, .Hull))
+    append(&player_data.parts[PartId.Hull], create_part({ -1, -1 }, .Hull))
+
+
+    player_data.position = rl.Vector2 { screen_rect.width / 2 - f32(ship_part_size.x / 2), screen_rect.height - f32(50 + ship_part_size.y) }
+    player_data.horizontal_speed = BASE_PLAYER_H_SPEED
+    player_data.vertical_speed = BASE_PLAYER_SPEED
+}
+
 does_collide_with_player :: proc(player_data: ^Player_Data, debris_data: ^Debris_Data) -> (bool, [2]i32, [2]i32) {
     parts := debris_data.parts[0:debris_data.part_count]
 
@@ -124,7 +139,7 @@ player_check_for_unreachable_parts :: proc(player_data: ^Player_Data) {
                     append(&tiles_to_check, cur + {0, -1})
                 }
                 if !slice.contains(tiles_to_check[:], cur + {1, 0}) && !slice.contains(tiles_found[:], cur + {1, 0}){
-                    append(&tiles_to_check, cur + {0, 1})
+                    append(&tiles_to_check, cur + {1, 0})
                 }
                 if !slice.contains(tiles_to_check[:], cur + {-1, 0}) && !slice.contains(tiles_found[:], cur + {-1, 0}){
                     append(&tiles_to_check, cur + {-1, 0})
