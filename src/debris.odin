@@ -9,9 +9,11 @@ Debris_Data :: struct {
     part_count: i32,
 }
 
+DEBRIS_SPAWN_INTERVAL :f32: 3
 Debris_Manager :: struct {
     active_debris: [16]Debris_Data,
     debris_count: i32,
+    debris_spawn_time: f32,
 }
 
 reset_debris :: proc(debris: ^Debris_Data) {
@@ -35,6 +37,18 @@ debris_update :: proc(manager: ^Debris_Manager) {
             generate_random_debris(manager)
         }
 
+    }
+
+    if manager.debris_spawn_time > 0 {
+        manager.debris_spawn_time -= get_capped_frame_time()
+    } else if manager.debris_count < 10 {
+        if rand.int32_range(0, 5) == 0 {
+            generate_random_debris(manager)
+        } else {
+            generate_junk_debris(manager)
+        }
+
+        manager.debris_spawn_time = DEBRIS_SPAWN_INTERVAL
     }
 }
 

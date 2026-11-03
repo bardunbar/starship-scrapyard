@@ -81,6 +81,9 @@ weld_debris_to_player :: proc(player_data: ^Player_Data, debris_data: ^Debris_Da
         part_array := &player_data.parts[part.id]
         append(part_array, PartData { position = part.position + debris_translation, id = part.id })
     }
+
+    // Since some debris might be shot apart we need to do this just in case
+//    player_check_for_unreachable_parts(player_data)
 }
 
 does_player_contain_part :: proc(player_data: ^Player_Data, part_location: [2]i32) -> bool {
@@ -93,6 +96,53 @@ does_player_contain_part :: proc(player_data: ^Player_Data, part_location: [2]i3
     }
 
     return false
+}
+
+player_check_for_unreachable_parts :: proc(player_data: ^Player_Data) {
+    // Do a walk of the player and mark any unreachable squares as missing
+    tiles_found := [dynamic][2]i32 {}
+    defer delete(tiles_found)
+
+    tiles_to_check := [dynamic][2]i32 {}
+    defer delete(tiles_to_check)
+
+    append(&tiles_to_check, {0, 1})
+    append(&tiles_to_check, {0, -1})
+    append(&tiles_to_check, {1, 0})
+    append(&tiles_to_check, {-1, 0})
+
+    for len(tiles_to_check) > 0 {
+        cur := pop_front(&tiles_to_check)
+        if does_player_contain_part(player_data, cur) {
+            if !slice.contains(tiles_found[:], cur) {
+                append(&tiles_found, cur)
+
+                if !slice.contains(tiles_to_check[:], cur + {0, 1}) && !slice.contains(tiles_found[:], cur + {0, 1}){
+                    append(&tiles_to_check, cur + {0, 1})
+                }
+                if !slice.contains(tiles_to_check[:], cur + {0, -1}) && !slice.contains(tiles_found[:], cur + {0, -1}){
+                    append(&tiles_to_check, cur + {0, -1})
+                }
+                if !slice.contains(tiles_to_check[:], cur + {1, 0}) && !slice.contains(tiles_found[:], cur + {1, 0}){
+                    append(&tiles_to_check, cur + {0, 1})
+                }
+                if !slice.contains(tiles_to_check[:], cur + {-1, 0}) && !slice.contains(tiles_found[:], cur + {-1, 0}){
+                    append(&tiles_to_check, cur + {-1, 0})
+                }
+            }
+        }
+    }
+
+    // Any tiles in player not in tiles found need to be destroyed
+    sliced_found := tiles_found[:]
+    for &parts in player_data.parts {
+        #reverse for part_data, index in parts {
+            if !slice.contains(sliced_found, part_data.position) {
+                destruction_add_part(&destruction, player_data^, part_data.id, part_data.position)
+                unordered_remove(&parts, index)
+            }
+        }
+    }
 }
 
 damage_player :: proc(player_data: ^Player_Data, impacting_debris: ^Debris_Data, impact_location: [2]i32, debris_part_index: int) {
@@ -131,51 +181,7 @@ damage_player :: proc(player_data: ^Player_Data, impacting_debris: ^Debris_Data,
     }
 
     if player_hit {
-        // Do a walk of the player and mark any unreachable squares as missing
-        tiles_found := [dynamic][2]i32 {}
-        defer delete(tiles_found)
-
-        tiles_to_check := [dynamic][2]i32 {}
-        defer delete(tiles_to_check)
-
-        append(&tiles_to_check, {0, 1})
-        append(&tiles_to_check, {0, -1})
-        append(&tiles_to_check, {1, 0})
-        append(&tiles_to_check, {-1, 0})
-
-        for len(tiles_to_check) > 0 {
-            cur := pop_front(&tiles_to_check)
-            if does_player_contain_part(player_data, cur) {
-                if !slice.contains(tiles_found[:], cur) {
-                    append(&tiles_found, cur)
-
-                    if !slice.contains(tiles_to_check[:], cur + {0, 1}) && !slice.contains(tiles_found[:], cur + {0, 1}){
-                        append(&tiles_to_check, cur + {0, 1})
-                    }
-                    if !slice.contains(tiles_to_check[:], cur + {0, -1}) && !slice.contains(tiles_found[:], cur + {0, -1}){
-                        append(&tiles_to_check, cur + {0, -1})
-                    }
-                    if !slice.contains(tiles_to_check[:], cur + {1, 0}) && !slice.contains(tiles_found[:], cur + {1, 0}){
-                        append(&tiles_to_check, cur + {0, 1})
-                    }
-                    if !slice.contains(tiles_to_check[:], cur + {-1, 0}) && !slice.contains(tiles_found[:], cur + {-1, 0}){
-                        append(&tiles_to_check, cur + {-1, 0})
-                    }
-                }
-            }
-        }
-
-        // Any tiles in player not in tiles found need to be destroyed
-        sliced_found := tiles_found[:]
-        for &parts in player_data.parts {
-            #reverse for part_data, index in parts {
-                if !slice.contains(sliced_found, part_data.position) {
-                    destruction_add_part(&destruction, player_data^, part_data.id, part_data.position)
-                    unordered_remove(&parts, index)
-                }
-            }
-        }
-
+        player_check_for_unreachable_parts(player_data)
     }
 }
 

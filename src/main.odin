@@ -109,7 +109,9 @@ main :: proc() {
     append(&player_data.parts[PartId.Shield], create_part({ 1, -2 }, .Shield))
     append(&player_data.parts[PartId.Shield], create_part({ -1, -2 }, .Shield))
 
-    debris_manager := Debris_Manager {}
+    debris_manager := Debris_Manager {
+        debris_spawn_time = DEBRIS_SPAWN_INTERVAL
+    }
 //    generate_random_debris(&debris_manager)
     generate_junk_debris(&debris_manager)
 
