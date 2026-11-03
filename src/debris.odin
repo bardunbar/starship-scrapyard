@@ -26,6 +26,18 @@ NEIGHBOR_PARTS :: [4][2]i32 {
     { 0, -1 },
 }
 
+debris_update :: proc(manager: ^Debris_Manager) {
+    #reverse for debris, index in manager.active_debris[:manager.debris_count] {
+        if debris.part_count <= 0 {
+            sliced_debris := manager.active_debris[0:]
+            array_swap_back(&sliced_debris, index, int(manager.debris_count - 1))
+            manager.debris_count -= 1
+            generate_random_debris(manager)
+        }
+
+    }
+}
+
 generate_junk_debris :: proc(manager: ^Debris_Manager) {
     if manager.debris_count < len(manager.active_debris) {
         new_debris := &manager.active_debris[manager.debris_count]

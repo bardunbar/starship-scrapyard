@@ -15,6 +15,7 @@ ship_part_size: [2]i32 = {}
 screen_rect: rl.Rectangle = {}
 part_textures: PartTextures = {}
 destruction: Destruction_System = {}
+projectiles: Projectile_System = {}
 
 main :: proc() {
     when ODIN_DEBUG {
@@ -113,6 +114,8 @@ main :: proc() {
     generate_junk_debris(&debris_manager)
 
     destruction = create_destruction_system()
+    projectiles = create_projectile_system()
+    defer destroy_projectile_system(&projectiles)
 
     rl.SetTargetFPS(60)
 
@@ -137,6 +140,12 @@ main :: proc() {
 
             if rl.IsKeyDown(rl.KeyboardKey.D) {
                 input_vector.x += 1
+            }
+
+            if rl.IsKeyPressed(rl.KeyboardKey.SPACE) {
+                for blaster in player_data.parts[.Blaster] {
+                    projectile_add(&projectiles, player_data.position + to_vector(part_position(blaster.position)))
+                }
             }
 
             player_data.position += rl.Vector2 { input_vector.x *  player_data.horizontal_speed * get_capped_frame_time(), 0 }
@@ -166,13 +175,6 @@ main :: proc() {
                             if debris.parts[index].id == .Junk {
                                 impacting_location := contact.player_relative_location + debris.parts[index].position + {0, 1}
                                 damage_player(&player_data, &debris, impacting_location, index)
-                                if debris.part_count <= 0 {
-                                    sliced_debris := debris_manager.active_debris[0:]
-                                    array_swap_back(&sliced_debris, index, int(debris_manager.debris_count - 1))
-                                    debris_manager.debris_count -= 1
-                                    //                                generate_random_debris(&debris_manager)
-                                    generate_junk_debris(&debris_manager)
-                                }
                             } else {
                                 // Otherwise do a weld
                                 should_weld = true
@@ -199,7 +201,10 @@ main :: proc() {
             screen_rect = get_screen_bounds(camera)
 
             update_starfields()
+
+            debris_update(&debris_manager)
             destruction_update(&destruction)
+            projectile_update(&projectiles, &debris_manager)
         }
 
         {
@@ -248,6 +253,7 @@ main :: proc() {
                 }
             }
 
+            projectile_render(&projectiles)
             destruction_render(destruction)
         }
 
