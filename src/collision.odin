@@ -15,7 +15,6 @@ ContactData :: struct {
 get_part_contacts :: proc(player_data: ^Player_Data, debris: ^Debris_Data) -> [len(debris.parts)]ContactData {
 
     // Check to see if this debris contacts or slides against the player
-
     debris_delta_position := debris.position - player_data.position
     debris_relative_position := debris_delta_position / to_vector(ship_part_size)
 
@@ -45,6 +44,18 @@ get_part_contacts :: proc(player_data: ^Player_Data, debris: ^Debris_Data) -> [l
         }
 
         hits: [Corners]rl.Rectangle = {}
+        // Check the player core
+        for cell, corner in cells_to_check {
+            if cell == { 0, 0 } {
+                player_part_rect := part_rect(player_data.position, cell)
+                debris_part_rect := part_rect(debris.position, part.position)
+                overlap := rl.GetCollisionRec(player_part_rect, debris_part_rect)
+                overlap.x, overlap.y = 1, 1
+                hits[corner] = overlap
+            }
+        }
+
+        // Check the player parts
         for parts, part_id in player_data.parts {
             for part_data in parts {
                 for cell, corner in cells_to_check {

@@ -28,8 +28,48 @@ NEIGHBOR_PARTS :: [4][2]i32 {
     { 0, -1 },
 }
 
-debris_update :: proc(manager: ^Debris_Manager) {
-    #reverse for debris, index in manager.active_debris[:manager.debris_count] {
+debris_update :: proc(manager: ^Debris_Manager, player_data: ^Player_Data) {
+    // Update any active debris -- Loop in reverse so we can remove with a swap
+    #reverse for &debris, index in manager.active_debris[:manager.debris_count] {
+        debris.position += rl.Vector2 { 0, player_data.vertical_speed * get_capped_frame_time() }
+        bounds := get_debris_bounds(&debris)
+
+        if bounds.y > screen_rect.y + screen_rect.height {
+            debris.part_count = 0
+        } else {
+            contacts := get_part_contacts(player_data, &debris)
+            running_slide_adjustment: f32 = 0
+            should_weld := false
+            for contact, index in contacts[:debris.part_count] {
+                if contact.do_weld {
+
+                    // Check the contact type, if its junk then we need to handle junk.
+                    if debris.parts[index].id == .Junk {
+                        impacting_location := contact.player_relative_location + debris.parts[index].position + {0, 1}
+                        damage_player(player_data, &debris, impacting_location, index)
+                        player_data.vertical_speed = BASE_PLAYER_SPEED + f32(len(player_data.parts[.Thruster])) * 20
+                        player_data.horizontal_speed = BASE_PLAYER_H_SPEED + f32(len(player_data.parts[.Thruster])) * 10
+                    } else {
+                        // Otherwise do a weld
+                        should_weld = true
+                        weld_debris_to_player(player_data, &debris, contact.player_relative_location)
+
+                        player_data.vertical_speed = BASE_PLAYER_SPEED + f32(len(player_data.parts[.Thruster])) * 20
+                        player_data.horizontal_speed = BASE_PLAYER_H_SPEED + f32(len(player_data.parts[.Thruster])) * 10
+                        debris.part_count = 0
+                        break
+                    }
+
+                } else if contact.do_slide {
+                    running_slide_adjustment = contact.slide_offset
+                }
+            }
+
+            if !should_weld {
+                debris.position.x += running_slide_adjustment
+            }
+        }
+
         if debris.part_count <= 0 {
             sliced_debris := manager.active_debris[0:]
             array_swap_back(&sliced_debris, index, int(manager.debris_count - 1))

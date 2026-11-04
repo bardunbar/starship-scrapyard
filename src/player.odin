@@ -102,6 +102,10 @@ weld_debris_to_player :: proc(player_data: ^Player_Data, debris_data: ^Debris_Da
 }
 
 does_player_contain_part :: proc(player_data: ^Player_Data, part_location: [2]i32) -> bool {
+    if part_location == {0, 0} {
+        return true
+    }
+
     for parts in player_data.parts {
         for part_data in parts {
             if part_data.position == part_location {
@@ -164,6 +168,14 @@ damage_player :: proc(player_data: ^Player_Data, impacting_debris: ^Debris_Data,
     debris_part := &impacting_debris.parts[debris_part_index]
 
     player_hit := false
+
+    // Destroy junk that hits the core. One day this should cause a loss state.
+    if impact_location == {0, 0} {
+        sliced_debris := impacting_debris.parts[:impacting_debris.part_count]
+        array_swap_back(&sliced_debris, debris_part_index, int(impacting_debris.part_count - 1))
+        impacting_debris.part_count -= 1
+        destruction_add_part(&destruction, player_data^, debris_part.id, {0, -1})
+    }
 
     // Find the tile that has been hit
     search: for &parts in player_data.parts {
